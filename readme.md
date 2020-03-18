@@ -2,11 +2,10 @@ Throughout the past few months I became quite interested in finance, i.e. the st
 
 **Please Note**: I am very much aware of the risks trading, especially daytrading, comes along. Neithertheless I wanted to build a little application that would trade automatically using **imaginary budget**.
 
-Below the rough functionality is given:
-Running the python script *AutomatedIntradayTrading.py* will do the follwing.
+Running the python script *AutomatedIntradayTrading.py* will make trades with up to 5 stocks concurrently. To this end, the market is monitored in real time at a frequency of 1 minutes.
 
-1) Check Yahoo.finance for promising stocks (based on the recent past % change)
-while true (1 min frequency)
+Program Sequence:
+  1) Check Yahoo.finance for promising stocks (based on the recent past % change)
   2) Pull live stock data using the alpha vantage API
   3) Based on a technical analysis, stocks are bought and selled automatically
   4) Bookkeeping  
