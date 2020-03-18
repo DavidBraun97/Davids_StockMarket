@@ -14,54 +14,68 @@ plt.style.use('ggplot')
 ##### UTILITY FUNCTIONS #####
 
 def getpromisingstocks(n):
-    """get most promising stocks by checking yahoo.finance.com for stocks with
-       highest positive % change
+    """get most promising stocks by checking https://tradingeconomics.com for
+    stocks with highest positive % change
     n is number of stocks
     """
-    target_url= "https://finance.yahoo.com/gainers"
+    target_url= "https://tradingeconomics.com/united-states/stock-market"
 
     sauce = urllib.request.urlopen(target_url).read()
     soup = bs.BeautifulSoup(sauce,features="html.parser")
 
-    table = soup.table
+    table = soup.findAll('table')[1]
     table_rows = table.find_all('tr')
     changes = []
     tickers = []
     for tr in table_rows:
-        #print(tr)
         td = tr.find_all('td')
-        #print(td)
         row = [ i.text for i in td]
         try:
-            tickers.append(row[0])
-            changes.append(row[4])
+            ticker = row[0]
+            ticker = ticker.replace('\n', '')
+            tickers.append(ticker)
+            changes.append(row[5])
         except:
-            continue
+            pass
+    df = pd.DataFrame({'Tickers':tickers,'%Changes':changes})
+    df.sort_values(by=['%Changes'],ascending=False,inplace=True)
     return tickers[0:n]
 
 
-def pullstockfrom_av(tickers):
+def pullstockfrom_av(n,tickers):
     """pull intraday stock data to csv via alpha_vantage API
-    tickers is list of stock tickers to be pulled
+    n is number of stocks concurrently traded
     """
     ts = TimeSeries(key='E9XI5UP9ZBAWPV84',output_format='pandas')
+    if tickers == []:
+        tickers = getpromisingstocks(n)
+        prom_tickers = []
+        print("Checking for most promising stocks.")
+    else:
+        prom_tickers = tickers
     # Get pd.dataframe with the intraday data and another with  the call's metadata
-    for ticker in tickers:
-        data, meta_data = ts.get_intraday(ticker,outputsize='compact',interval='1min')
-        data.columns=["Open", "High", "Low", "Close",'Volume']
-        path = os.path.join('C:/Users/David/Documents/Projekte/Davids_StockMarket/data/',ticker)
-        data.to_csv(str(path)+'.csv')
-    return
+    for i in range(n):
+        try:
+            data, meta_data = ts.get_intraday(tickers[i],outputsize='compact',interval='1min')
+            data.columns=["Open", "High", "Low", "Close",'Volume']
+            path = os.path.join('C:/Users/David/Documents/Projekte/Davids_StockMarket/data/',tickers[i])
+            data.to_csv(str(path)+'.csv')
+            prom_tickers.append(tickers[i])
+        except:
+            print(tickers[i], " not available on alpha_vantage. It is substituted by ", tickers[i+1])
+    return prom_tickers
 
-def pullstockfrom_av_long(tickers):
+def pullstockfrom_av_long(tickers,start):
     """pull daily stock data to csv via alpha_vantage API
     tickers is list of stock tickers to be pulled
     """
     ts = TimeSeries(key='E9XI5UP9ZBAWPV84',output_format='pandas')
     # Get pd.dataframe with the intraday data and another with  the call's metadata
     for ticker in tickers:
-        data, meta_data = ts.get_daily(ticker,outputsize='full')
-        data.columns=["Open", "High", "Low", "Close",'Volume']
+        data, meta_data = ts.get_daily_adjusted(ticker,outputsize='full')
+        data.columns=["Open", "High", "Low", "Close", 'adj. Close','Volume','dividend amount','split coefficient']
+        keep = data.index >= start
+        data = data[keep]
         path = os.path.join('C:/Users/David/Documents/Projekte/Davids_StockMarket/data/',ticker)
         data.to_csv(str(path)+'.csv')
     return
@@ -90,13 +104,13 @@ def bollinger_bands(s, k=2, n=10):
     return b.drop('std', axis=1)
 
 def visualize_stocks_individually(stock, ticker):
-    close_stock_df = bollinger_bands(stock['Close'])
-    plt.plot(close_stock_df['Close'],'black')
+    close_stock_df = bollinger_bands(stock['adj. Close'])
+    plt.plot(close_stock_df['adj. Close'],'black')
     plt.plot(close_stock_df['upper'],'orange')
     plt.plot(close_stock_df['lower'],'orange')
     plt.legend(['Close','upper','lower'])
 
-    plt.title(('Intraday TimeSeries '+ ticker))
+    plt.title(('Adj. Close Prices '+ ticker))
     plt.show()
     return
 
@@ -171,6 +185,5 @@ def analyse_stock(stock_df,ticker,hold,share_price):
         sell = False
         price = 0
     time = close_stock_df.index[0]
-    print(time)
     ID = ticker+str(time)
     return buy,sell,price,ID

@@ -4,11 +4,17 @@ import datetime
 import matplotlib.pyplot as plt
 from utility.utils import *
 import time
+import os
+
 plt.style.use('ggplot')
 
 ## INIT ##
-tickers = getpromisingstocks(5)
-n = len(tickers)
+try:
+    os.remove("transactions.json")
+    print("Clearing past transactions!")
+except:
+    pass
+n = 5
 cash = 12500
 input_cash = []
 shares = []
@@ -19,10 +25,11 @@ for i in range(n):
     shares_price.append(0)
 
 ## TRADING ##
-print("Start trading with ",cash,"$.\nConsidering ", tickers," stocks.\n\n")
+tickers = []
+print("Start trading with",cash,"$.")
 while True:
     ## Phase 0: Gather data ##
-    pullstockfrom_av(tickers)
+    tickers = pullstockfrom_av(n,tickers)
     print("##  Pulling live stock data.  ##")
     for i in range(n):
         ticker = tickers[i]
