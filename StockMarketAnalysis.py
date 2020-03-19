@@ -2,37 +2,30 @@ import pandas as pd
 import datetime
 import matplotlib.pyplot as plt
 import time
+import quandl
 
 from utility.utils import *
 
 plt.style.use('ggplot')
 
 
-##  Gather data ##
+### INIT ###
 tickers = ["AAPL","GOOG",'MSFT']
-#print("##  Pulling live stock data.  ##")
 start = datetime.datetime(2016,1,1)
-#pullstockfrom_av_long(tickers,start)
+end = datetime.date.today()
+n = len(tickers)
+investment = 10000
 
-# for ticker in tickers:
-#     stock_df = getdffromcsv(ticker)
-#     visualize_stocks_individually(stock_df, ticker)
-#     adjClose_df = pd.DataFrame(stock_df['adj. Close'])
-#     stock_return = adjClose_df.apply(lambda x: x / x[-1])
-#     stock_return.head() - 1
-#     stock_return.plot(grid = True).axhline(y = 1, color = "black", lw = 2)
-#     plt.show()
+##  Gather data ##
+pullstockfrom_av_long(tickers,start)
 
+for i in range(n):
+    stock_df = getdffromcsv(tickers[i])
+    print("\nAnalyzing ", tickers[i])
+    ## Classical Risk Metrics
+    SR = SharpRatio(stock_df.loc[:,['adj. Close']], 1.02)
+    print('Sharp Ratio (risk free rate: 1.02): ', SR.round(3))
 
-aapl_df = getdffromcsv("AAPL")
-goog_df = getdffromcsv("GOOG")
-msft_df = getdffromcsv("MSFT")
-stocks_df = pd.DataFrame({'APPL Adj. Close': aapl_df['adj. Close'], 'GOOG Adj. Close': goog_df['adj. Close'], 'MSFT Adj. Close': msft_df['adj. Close']})
-
-## Stock revenue
-stock_return = stocks_df.apply(lambda x: x / x[-1])
-stock_return.head() - 1
-title = str('Stock revenue since '+ str(start.date()))
-stock_return.plot(grid = True,title = title).axhline(y = 1, color = "black", lw = 2)
-plt.show()
-## Classical Risk Metrics
+    trades_df = MA_Crossover(stock_df,tickers[i],investment)
+    profit = calculateProfit(trades_df)
+    print("Profit with stock",tickers[i],"between",str(start.date()),"and",str(end),":",profit.round(3))
