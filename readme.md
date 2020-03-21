@@ -10,4 +10,4 @@ Program Sequence:
   3) Based on a technical analysis, stocks are bought and selled automatically
   4) Bookkeeping  
 
-Running the python script *StockMarketAnalysis.py* will analyse the market on a long term scale. Based on that, opportunities for long term investments are given.
+Running the python script *StockMarketAnalysis.py* will analyse the market on a long term scale. Based on that, opportunities for long term investments are given..
